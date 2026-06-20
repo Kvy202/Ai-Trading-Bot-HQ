@@ -1,0 +1,19 @@
+[Unit]
+Description=Trading Bot - Live Writer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=__INSTALL_DIR__
+EnvironmentFile=__INSTALL_DIR__/.env
+Environment=PYTHONPATH=__INSTALL_DIR__
+ExecStart=__INSTALL_DIR__/.venv/bin/python tools/live_writer.py
+Restart=always
+RestartSec=5
+StandardOutput=append:__INSTALL_DIR__/logs/live_writer.out
+StandardError=append:__INSTALL_DIR__/logs/live_writer.err
+
+[Install]
+WantedBy=trading-bot.target

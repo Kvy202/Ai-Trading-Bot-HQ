@@ -1,0 +1,2 @@
+writer_pid=16832
+proxy_pid=22300

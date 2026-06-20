@@ -1,0 +1,37 @@
+# venv & Python junk
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# logs, local runs, artifacts
+logs/
+!logs/.gitkeep
+*.out
+*.err
+*.lock
+runtime.log
+
+# data & models (adjust as needed)
+data/
+oof/
+models/
+checkpoints/
+
+# notebooks’ autosaves
+*.ipynb_checkpoints/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+
+# secrets
+.env
+config/secrets.json
+*.pem
+*.p12
+*.key
+*.crt

@@ -1,0 +1,337 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>AI Bot — Live Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 16px; background:#0b0f14; color:#e6e6e6; }
+    h1 { margin: 0 0 8px 0; font-size: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { background: #121923; border: 1px solid #1f2a37; border-radius: 12px; padding: 12px; box-shadow: 0 0 0 rgba(0,0,0,0); transition: box-shadow 0.4s ease; }
+    .card.flash { box-shadow: 0 0 18px rgba(0,200,255,0.35); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 6px 8px; border-bottom: 1px solid #1f2a37; text-align: left; white-space: nowrap; }
+    th { color:#93a4b8; font-weight:600; }
+    td.wrap { white-space: normal; }
+    .pos-row.up { animation: glowUp 0.8s; }
+    .pos-row.down { animation: glowDown 0.8s; }
+    @keyframes glowUp   { from { background:#0b3d22; } to { background:transparent; } }
+    @keyframes glowDown { from { background:#3d0b0b; } to { background:transparent; } }
+    .green  { color:#44d07b; }
+    .red    { color:#ff5c5c; }
+    .muted  { color:#9aa9ba; }
+    .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .pill   { background:#1f2a37; padding:4px 8px; border-radius:999px; font-size:12px; color:#c7d2de; }
+    .pill .label { color:#93a4b8; margin-right:6px; }
+    .wrap-pills { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    #status-pill { transition: background 0.3s; }
+    #status-pill.ok   { background:#0b3d22; color:#44d07b; }
+    #status-pill.err  { background:#3d0b0b; color:#ff5c5c; }
+    .tag-pass { background:#0b3d22; color:#44d07b; border-radius:4px; padding:1px 5px; font-size:11px; }
+    .tag-fail { background:#3d0b0b; color:#ff5c5c; border-radius:4px; padding:1px 5px; font-size:11px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>AI Trading Bot — Live Dashboard <span id="ts" class="pill"></span></h1>
+    <div class="wrap-pills">
+      <span id="status-pill" class="pill">connecting…</span>
+      <div class="pill"><span class="label">exec thr</span><span id="execThr">—</span> (<span id="execMode">—</span>)</div>
+      <div class="pill"><span class="label">Realized (today)</span><span id="realized" class="green">0</span></div>
+      <div class="pill"><span class="label">Unrealized</span><span id="unrl">0</span></div>
+    </div>
+  </div>
+  <div class="grid">
+    <div id="card-positions" class="card">
+      <div class="header"><div>Open Positions</div></div>
+      <table id="tbl-pos">
+        <thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Avg</th><th>Last</th><th>Unrealized</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="card-signals" class="card">
+      <div class="header"><div>Latest Signals</div></div>
+      <table id="tbl-sig">
+        <thead><tr><th>Time</th><th>Symbol</th><th>p</th><th>rv</th><th>thr</th><th>eff_thr</th><th>pass</th><th>allow</th><th>kinds</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="card-recent" class="card">
+      <div class="header"><div>Recent Paper Trades</div></div>
+      <table id="tbl-recent">
+        <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Price</th><th>Qty</th><th>Reason</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="card-closed" class="card">
+      <div class="header"><div>Closed Trades (PnL)</div></div>
+      <table id="tbl-closed">
+        <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th><th>Exit</th><th>PnL</th><th>Reason</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tier 2 Shadow Data Panel -->
+  <div style="margin-top:12px;">
+    <div id="card-tier2" class="card">
+      <div class="header">
+        <div>Tier 2 Shadow Data <span class="muted" style="font-size:11px;">(informational only)</span></div>
+        <div id="t2-status-pill" class="pill muted">not started</div>
+      </div>
+      <table id="tbl-t2">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Funding Rate</th>
+            <th>FR Age</th>
+            <th>OI (USD M)</th>
+            <th>OI Age</th>
+            <th>Mark Px</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:8px; font-size:12px; color:#93a4b8; display:flex; gap:16px; flex-wrap:wrap;">
+        <span>Cycle: <span id="t2-cycle">—</span></span>
+        <span>HB age: <span id="t2-hb-age">—</span></span>
+        <span>FR rows: <span id="t2-fr-rows">—</span></span>
+        <span>OI rows: <span id="t2-oi-rows">—</span></span>
+        <span id="t2-quality-line"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---- formatting ----
+    function fmtPnl(v)   { return (parseFloat(v)||0).toFixed(4); }
+    function fmtPrice(v) { v = parseFloat(v)||0; return v > 999 ? v.toFixed(2) : v.toFixed(4); }
+    function fmtQty(v)   { return (parseFloat(v)||0).toFixed(6); }
+    function clsPnL(v)   { return (parseFloat(v)||0) >= 0 ? "green" : "red"; }
+
+    function fmtTime(ts) {
+      if (!ts) return "";
+      // "2026-04-29 16:25:47+0000" → "16:25:47"
+      const m = ts.match(/(\d{2}:\d{2}:\d{2})/);
+      return m ? m[1] : ts;
+    }
+
+    // safe text-node cell builder — avoids innerHTML XSS
+    function td(text, cls) {
+      const el = document.createElement("td");
+      el.textContent = text ?? "";
+      if (cls) el.className = cls;
+      return el;
+    }
+
+    // ---- state ----
+    let prevUnrl = null;
+    let pollTimer = null;
+
+    function setStatus(ok, msg) {
+      const p = document.getElementById("status-pill");
+      p.textContent = msg;
+      p.className = "pill " + (ok ? "ok" : "err");
+    }
+
+    async function refresh() {
+      try {
+        const r = await fetch("/api/state", { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const j = await r.json();
+
+        setStatus(true, "live");
+        document.getElementById("ts").textContent = j.ts;
+        document.getElementById("execThr").textContent = fmtPrice(j.totals.exec_thr);
+        document.getElementById("execMode").textContent = j.totals.exec_mode;
+
+        const realEl = document.getElementById("realized");
+        const realVal = parseFloat(j.totals.realized_sum_today) || 0;
+        realEl.textContent = fmtPnl(realVal);
+        realEl.className = clsPnL(realVal);
+
+        // ---- positions (skip closed qty=0) ----
+        const tb = document.querySelector("#tbl-pos tbody");
+        tb.innerHTML = "";
+        let sum = 0;
+        Object.entries(j.positions).forEach(([sym, p]) => {
+          if ((p.qty || 0) <= 0) return;
+          sum += p.unrealized || 0;
+          const tr = document.createElement("tr");
+          tr.className = "pos-row " + ((p.unrealized || 0) >= 0 ? "up" : "down");
+          tr.appendChild(td(sym));
+          tr.appendChild(td(p.side || "-"));
+          tr.appendChild(td(fmtQty(p.qty)));
+          tr.appendChild(td(fmtPrice(p.avg)));
+          tr.appendChild(td(fmtPrice(p.last_price)));
+          tr.appendChild(td(fmtPnl(p.unrealized), clsPnL(p.unrealized)));
+          tb.appendChild(tr);
+        });
+
+        const unEl = document.getElementById("unrl");
+        const unrlStr = fmtPnl(sum);
+        if (prevUnrl !== null && prevUnrl !== unrlStr) {
+          const card = document.getElementById("card-positions");
+          card.classList.add("flash");
+          setTimeout(() => card.classList.remove("flash"), 350);
+        }
+        prevUnrl = unrlStr;
+        unEl.textContent = unrlStr;
+        unEl.className = clsPnL(sum);
+
+        // ---- signals ----
+        const tsig = document.querySelector("#tbl-sig tbody");
+        tsig.innerHTML = "";
+        j.signals.forEach(s => {
+          const tr = document.createElement("tr");
+          const passEl = document.createElement("span");
+          passEl.textContent = s.pass_exec ? "PASS" : "FAIL";
+          passEl.className = s.pass_exec ? "tag-pass" : "tag-fail";
+          tr.appendChild(td(fmtTime(s.ts)));
+          tr.appendChild(td(s.symbol));
+          tr.appendChild(td(parseFloat(s.p_meta).toFixed(4)));
+          tr.appendChild(td(parseFloat(s.rv_mean).toFixed(3)));
+          tr.appendChild(td(s.thr));
+          tr.appendChild(td(fmtPrice(s.eff_thr)));
+          const passCell = document.createElement("td");
+          passCell.appendChild(passEl);
+          tr.appendChild(passCell);
+          tr.appendChild(td(s.allow));
+          tr.appendChild(td(s.kinds || s.mode || ""));
+          tsig.appendChild(tr);
+        });
+
+        // ---- recent trades ----
+        const trec = document.querySelector("#tbl-recent tbody");
+        trec.innerHTML = "";
+        j.recent_trades.forEach(t => {
+          const tr = document.createElement("tr");
+          tr.appendChild(td(fmtTime(t.ts)));
+          tr.appendChild(td(t.symbol));
+          tr.appendChild(td(t.side));
+          tr.appendChild(td(fmtPrice(t.price)));
+          tr.appendChild(td(fmtQty(t.qty)));
+          tr.appendChild(td(t.reason, "muted"));
+          trec.appendChild(tr);
+        });
+
+        // ---- closed trades ----
+        const tcl = document.querySelector("#tbl-closed tbody");
+        tcl.innerHTML = "";
+        j.closed_trades.forEach(t => {
+          const tr = document.createElement("tr");
+          tr.appendChild(td(fmtTime(t.ts)));
+          tr.appendChild(td(t.symbol));
+          tr.appendChild(td(t.side));
+          tr.appendChild(td(fmtQty(t.qty)));
+          tr.appendChild(td(fmtPrice(t.entry_avg)));
+          tr.appendChild(td(fmtPrice(t.exit_price)));
+          tr.appendChild(td(fmtPnl(t.realized_pnl), clsPnL(t.realized_pnl)));
+          tr.appendChild(td(t.reason, "muted"));
+          tcl.appendChild(tr);
+        });
+
+      } catch (e) {
+        setStatus(false, "error: " + e.message);
+      } finally {
+        // schedule next poll after this one finishes — no concurrent fetches
+        pollTimer = setTimeout(refresh, 1000);
+      }
+    }
+
+    refresh();
+
+    // ---- Tier 2 panel (polls /api/tier2 every 30s) ----
+    function fmtFR(rate) {
+      if (rate == null) return "—";
+      const pct = (rate * 100).toFixed(4) + "%";
+      return pct;
+    }
+    function fmtOI(usd, base) {
+      if (usd != null) return (usd / 1e6).toFixed(2) + "M";
+      if (base != null) return Math.round(base).toLocaleString();
+      return "—";
+    }
+    function fmtAge(s) {
+      if (s == null) return "—";
+      if (s < 120) return s + "s";
+      return Math.round(s / 60) + "m";
+    }
+    function frClass(rate) {
+      if (rate == null) return "";
+      return rate > 0 ? "green" : rate < 0 ? "red" : "";
+    }
+
+    async function refreshTier2() {
+      try {
+        const r = await fetch("/api/tier2", { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const j = await r.json();
+
+        const pill = document.getElementById("t2-status-pill");
+        if (!j.enabled) {
+          pill.textContent = "not started";
+          pill.className = "pill muted";
+        } else {
+          const age = j.runner_hb_age_s;
+          if (age == null || age > 600) {
+            pill.textContent = "DEAD";
+            pill.className = "pill" ;
+            pill.style.background = "#3d0b0b"; pill.style.color = "#ff5c5c";
+          } else if (age > 180) {
+            pill.textContent = "stale " + fmtAge(age);
+            pill.className = "pill";
+            pill.style.background = "#3d2b00"; pill.style.color = "#ffb347";
+          } else {
+            pill.textContent = j.runner_ok ? "ok" : "error";
+            pill.className = "pill";
+            pill.style.background = j.runner_ok ? "#0b3d22" : "#3d0b0b";
+            pill.style.color = j.runner_ok ? "#44d07b" : "#ff5c5c";
+          }
+        }
+
+        document.getElementById("t2-cycle").textContent = j.runner_cycle ?? "—";
+        document.getElementById("t2-hb-age").textContent = fmtAge(j.runner_hb_age_s);
+        const counts = j.db_row_counts || {};
+        document.getElementById("t2-fr-rows").textContent = counts.funding_rate ?? "—";
+        document.getElementById("t2-oi-rows").textContent = counts.open_interest ?? "—";
+
+        const qline = document.getElementById("t2-quality-line");
+        if (j.quality_ok === true) {
+          qline.innerHTML = '<span class="tag-pass">quality ok</span>';
+        } else if (j.quality_ok === false) {
+          const issues = (j.quality_issues || []).slice(0, 2).join("; ");
+          qline.innerHTML = '<span class="tag-fail">quality issues: ' + issues + '</span>';
+        } else {
+          qline.textContent = "";
+        }
+
+        // Populate per-symbol table
+        const tbody = document.querySelector("#tbl-t2 tbody");
+        tbody.innerHTML = "";
+        const syms = new Set([...Object.keys(j.funding), ...Object.keys(j.oi)]);
+        syms.forEach(sym => {
+          const fr = j.funding[sym] || {};
+          const oi = j.oi[sym] || {};
+          const mark = fr.mark_px ?? oi.mark_px;
+          const tr = document.createElement("tr");
+          tr.appendChild(td(sym));
+          const frTd = td(fmtFR(fr.rate), frClass(fr.rate));
+          tr.appendChild(frTd);
+          tr.appendChild(td(fmtAge(fr.age_s), "muted"));
+          tr.appendChild(td(fmtOI(oi.oi_usd, oi.oi_base)));
+          tr.appendChild(td(fmtAge(oi.age_s), "muted"));
+          tr.appendChild(td(mark != null ? fmtPrice(mark) : "—", "muted"));
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        document.getElementById("t2-status-pill").textContent = "fetch error";
+      }
+    }
+
+    refreshTier2();
+    setInterval(refreshTier2, 30000);
+  </script>
+</body>
+</html>

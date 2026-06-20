@@ -1,0 +1,25 @@
+# ml_dl/config.yaml
+symbols: ["BTC/USDT:USDT","ETH/USDT:USDT","DOGE/USDT:USDT"]
+timeframe: "5m"
+lookback: 8000
+
+# labels / targets
+horizon_k: 12          # next-k bars lookahead
+classify: true         # use classification head (p(up))
+rv_regress: true       # also predict next-k realized vol
+
+# model
+kind: "tcn"            # "tcn" or "tx"
+seq_len: 64
+hidden: 128
+dropout: 0.1
+
+# training
+epochs: 25
+batch_size: 256
+lr: 1e-3
+weight_decay: 1e-4
+
+# outputs
+save_dir: "models"
+tag: "latest"

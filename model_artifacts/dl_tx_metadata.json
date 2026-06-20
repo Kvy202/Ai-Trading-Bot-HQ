@@ -1,0 +1,25 @@
+{
+  "kind": "tx",
+  "seq_len": 64,
+  "n_features": 27,
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "DOGEUSDT",
+    "XRPUSDT",
+    "SOLUSDT",
+    "BNBUSDT"
+  ],
+  "timeframe": "5m",
+  "label": {
+    "type": "triple",
+    "pt": 0.005,
+    "sl": 0.005,
+    "max_hold": 60,
+    "tau": null,
+    "horizon": 12
+  },
+  "val_auc": 0.6765544234542386,
+  "min_auc_gate": 0.52,
+  "trained_at": "2026-05-29T16:48:44.947822+00:00"
+}

@@ -1,0 +1,25 @@
+[Unit]
+Description=Hyperliquid AI Bot - Executor (paper/testnet by default)
+After=network-online.target hl-writer.service
+Wants=network-online.target
+Requires=hl-writer.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=__INSTALL_DIR__
+EnvironmentFile=__INSTALL_DIR__/.env
+Environment=PYTHONPATH=__INSTALL_DIR__
+# NOTE: intentionally NO --live flag. The trading mode is decided by
+# runtime/guardrails.resolve_trading_mode() from the .env confirmations
+# (LIVE_TRADING / PAPER_TRADING / HL_TESTNET / CONFIRM_LIVE_TRADING). With the
+# safe defaults this runs PAPER; real money requires the full confirmation set.
+ExecStart=__INSTALL_DIR__/.venv/bin/python tools/live_executor.py \
+    --signals logs/live_signals.csv
+Restart=always
+RestartSec=10
+StandardOutput=append:__INSTALL_DIR__/logs/live_executor.out
+StandardError=append:__INSTALL_DIR__/logs/live_executor.err
+
+[Install]
+WantedBy=hl-trading-bot.target

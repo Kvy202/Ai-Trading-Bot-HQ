@@ -1,0 +1,100 @@
+{
+  "_comment": "Runtime-tunable parameters. Keys are exact env-var names (uppercase). Values here are defaults; .env overrides everything. Remove a key from .env to let run.json control it.",
+
+  "signal": {
+    "PRED_THRESHOLD":  0.55,
+    "DL_P_LONG":       0.08,
+    "DL_P_LONG_MODE":  "abs",
+    "DL_MIN_AGREE":    2,
+    "DL_ALLOW_ONLY":   1
+  },
+
+  "risk": {
+    "RISK_PER_TRADE":                0.0025,
+    "MAX_NOTIONAL_USDT":             15,
+    "PER_SYMBOL_NOTIONAL_USDT":      15,
+    "MAX_PORTFOLIO_EXPOSURE_USDT":   31,
+    "MAX_CONCURRENT":                2,
+    "MAX_DD":                        0.05,
+    "MAX_HOLD_BARS":                 48,
+    "COOLDOWN_BARS":                 3,
+    "STOP_ATR_MULT":                 2.5,
+    "TP_R_MULT":                     3.0,
+    "LEVERAGE":                      5
+  },
+
+  "executor": {
+    "EXEC_TP_PCT":      0.01,
+    "EXEC_SL_PCT":      0.02,
+    "EXEC_RV_MAX":      100,
+    "EXEC_COOLDOWN_SEC": 120
+  },
+
+  "universe": {
+    "DL_SYMBOLS":           "BTCUSDT,ETHUSDT",
+    "DL_TIMEFRAME":         "1m",
+    "DL_SEQ_LEN":           64,
+    "DL_HORIZON_K":         12,
+    "DL_MAX_LOOKBACK_PAD":  6000,
+    "DL_BATCH":             256
+  },
+
+  "models": {
+    "DL_MODEL_KIND":  "tcn",
+    "DL_TEMP_LSTM":   1.0,
+    "DL_TEMP_TCN":    1.0,
+    "DL_TEMP_TX":     1.0
+  },
+
+  "features": {
+    "FEATURE_ENABLE":       1,
+    "FEATURE_TIMEFRAME":    "1m",
+    "FEATURE_KLINE_LIMIT":  1200,
+    "FEATURE_EMA_WINDOWS":  "20,50,100",
+    "FEATURE_RSI":          14,
+    "FEATURE_RV":           30,
+    "FEATURE_VOLZ":         60,
+    "IMB_ABS_MIN":          0.00,
+    "RV_STOP_MULT":         2.0,
+    "VOLZ_MIN":             -2.0,
+    "RSI_MIN":              10,
+    "RSI_MAX":              90,
+    "SPREAD_GUARD_BPS":     20
+  },
+
+  "exchange": {
+    "LEVERAGE":             5,
+    "POSITION_MODE":        "oneway",
+    "MARGIN_MODE":          "cross",
+    "CCXT_TIMEOUT_MS":      30000,
+    "CCXT_RETRIES":         3,
+    "CHECK_OPEN_ORDERS":    0,
+    "CCXT_DEBUG":           0
+  },
+
+  "hyperliquid": {
+    "_comment": "Phase 1 Hyperliquid execution (official SDK). NON-secret defaults only. EXCHANGE, ENVIRONMENT, LIVE_TRADING, PAPER_TRADING, HL_ACCOUNT_ADDRESS, HL_AGENT_PRIVATE_KEY and CONFIRM_LIVE_TRADING live ONLY in .env / Secrets Manager — never here. These are inert unless EXCHANGE=hyperliquid.",
+    "HL_TESTNET":  1,
+    "HL_SLIPPAGE": 0.05
+  },
+
+  "supervisor": {
+    "SUPERVISOR_PORT": 8789
+  },
+
+  "tier2": {
+    "TIER2_ENABLED":              0,
+    "TIER2_SHADOW_ONLY":          1,
+    "TIER2_STORE_PATH":           "data/tier2_features.db",
+    "TIER2_COLLECT_INTERVAL_SEC": 60,
+    "TIER2_FUNDING_RATE":         1,
+    "TIER2_OPEN_INTEREST":        1
+  },
+
+  "tier2_influence": {
+    "_comment": "Phase 2A shadow influence engine. off=no effect, shadow=log only, paper/live=blocked until backtest approval (n>=200 matched, stable improvement).",
+    "TIER2_INFLUENCE_MODE":        "shadow",
+    "TIER2_INFLUENCE_MAX_DELTA":   0.02,
+    "TIER2_INFLUENCE_FR_THRESHOLD": 0.0005
+  }
+}

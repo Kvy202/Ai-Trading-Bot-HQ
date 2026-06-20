@@ -1,0 +1,59 @@
+name: live-smoke
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/**'
+      - 'ml_dl/**'
+      - '.github/workflows/live-smoke.yml'
+jobs:
+  win:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Create venv & install deps (CPU)
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\pip install --upgrade pip
+          .\.venv\Scripts\pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+
+      - name: Prep logs
+        run: |
+          mkdir logs
+          if (Test-Path logs\live_writer.lock) { del logs\live_writer.lock }
+          if (Test-Path logs\live_executor.lock) { del logs\live_executor.lock }
+
+      # make writer permissive so trades can happen
+      - name: Env for run
+        run: |
+          echo "DL_ALLOW_ONLY=0" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "DL_WRITER_SLEEP=2" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Start live (background)
+        shell: pwsh
+        run: |
+          .\.venv\Scripts\python --version
+          pwsh .\tools\start_live.ps1 -Force -FreshLogs -ShowStatus -Plong 0.43 -Pmode abs -Cooldown 3 -MaxSymbols 2
+
+      - name: Let it run for ~45s
+        shell: pwsh
+        run: Start-Sleep -Seconds 45
+
+      - name: Stop live & show tail
+        shell: pwsh
+        run: |
+          pwsh .\tools\stop_live.ps1 -AlsoDashboard
+          Get-ChildItem logs | % { Write-Host "==> $($_.Name)"; Get-Content $_.FullName -Tail 40 }
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-logs
+          path: logs/*

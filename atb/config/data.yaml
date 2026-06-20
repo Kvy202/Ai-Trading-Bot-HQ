@@ -1,0 +1,14 @@
+# Day 1 config
+symbols:
+  - BTC/USDT
+  - ETH/USDT
+market_type: swap         # spot | swap | future
+timeframes: ["1m", "5m"]
+windows:
+  ema: [20, 50, 100]
+  rsi: 14
+  rv: 30                  # bars for realized volatility
+  vol_z: 60               # bars for volume z‑score
+microstructure:
+  top_k_levels: 5
+  spread_bps_guard: 8

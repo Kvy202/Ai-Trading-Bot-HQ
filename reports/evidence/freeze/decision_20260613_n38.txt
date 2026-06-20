@@ -1,0 +1,52 @@
+DECISION RECORD — 2026-06-13, n=38 (exit-policy review)
+========================================================
+
+Context
+-------
+Bot frozen at branch bot-v2-architecture, commit bbdc82f, PAPER mode, all V2
+flags off. Clean evidence session running since 2026-06-10 (post feature-skew
+fixes). This is the exit-policy decision point from EVIDENCE_CHECKLIST.md
+Phase E, reached early at n=38 (the >=30 threshold) rather than on 19-20 June.
+
+Evidence (tools/sim_exits.py --sessions current, n=38 replayable trades)
+------------------------------------------------------------------------
+Baseline (as-traded exits):
+    profit_factor = 0.339
+    net           = -1.6969 USDT
+    max_drawdown  = -1.7215 USDT
+
+Best counterfactual grid cell:
+    TP            = 0.30%
+    SL            = 0.30%
+    time_stop     = none
+    profit_factor = 0.388
+    net           = -1.1940 USDT
+
+Decision
+--------
+1. Do NOT enable V2_TIME_STOP_MIN (best cell has no time-stop anyway).
+2. Do NOT change TP/SL.
+3. Do NOT change thresholds, model weights, symbols, or model artifacts.
+4. Continue the frozen evidence window unchanged through submission.
+
+Reasoning
+---------
+The BEST cell in the entire exit grid is still losing (PF 0.388 < 1, net
+-1.19 USDT). Exit tuning reduces the loss but does not cross into profit.
+Therefore the dominant problem is not exit geometry — it is signal quality /
+entry direction. Changing TP/SL now would fit a 38-trade sample (improving PF
+by ~0.05 while remaining underwater), reset the clean evidence window, and
+not address the actual cause. The signal/entry hypothesis is a model/feature
+question, which is deliberately out of scope until after submission (a retrain
+or threshold change mid-window would invalidate the sample we are collecting).
+
+Status of the planned 19-20 June decision point
+------------------------------------------------
+Satisfied early by this record. Default remains: stay frozen. If the sample
+grows materially (toward n=100) the exit grid may be re-examined for evidence
+purposes only — but the conclusion above (exit tuning cannot rescue a
+sub-unity best cell) is expected to hold, and any change still requires a
+deploy marker before and after.
+
+Recorded by: operator decision, logged 2026-06-13.
+Supersedes placeholder: decision_20260619.txt (not needed).

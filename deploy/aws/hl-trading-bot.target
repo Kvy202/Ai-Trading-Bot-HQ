@@ -1,0 +1,9 @@
+[Unit]
+Description=Hyperliquid AI Trading Bot (writer + executor)
+# Start/stop the whole stack with:
+#   sudo systemctl start  hl-trading-bot.target
+#   sudo systemctl stop   hl-trading-bot.target
+Wants=hl-writer.service hl-executor.service
+
+[Install]
+WantedBy=multi-user.target

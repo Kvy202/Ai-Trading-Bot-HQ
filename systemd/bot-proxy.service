@@ -1,0 +1,19 @@
+[Unit]
+Description=Trading Bot - Proxy Loop
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=__INSTALL_DIR__
+EnvironmentFile=__INSTALL_DIR__/.env
+Environment=PYTHONPATH=__INSTALL_DIR__
+ExecStart=/bin/bash __INSTALL_DIR__/tools/live_proxy_loop.sh
+Restart=always
+RestartSec=5
+StandardOutput=append:__INSTALL_DIR__/logs/live_proxy.out
+StandardError=append:__INSTALL_DIR__/logs/live_proxy.err
+
+[Install]
+WantedBy=trading-bot.target

@@ -1,0 +1,7 @@
+[Unit]
+Description=Trading Bot (all components)
+After=network-online.target
+Wants=bot-writer.service bot-executor.service bot-proxy.service
+
+[Install]
+WantedBy=multi-user.target
