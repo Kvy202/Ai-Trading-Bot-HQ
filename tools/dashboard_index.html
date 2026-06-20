@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <title>AI Bot — Live Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <style>
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 16px; background:#0b0f14; color:#e6e6e6; }
     h1 { margin: 0 0 8px 0; font-size: 20px; }
@@ -30,6 +30,30 @@
     #status-pill.err  { background:#3d0b0b; color:#ff5c5c; }
     .tag-pass { background:#0b3d22; color:#44d07b; border-radius:4px; padding:1px 5px; font-size:11px; }
     .tag-fail { background:#3d0b0b; color:#ff5c5c; border-radius:4px; padding:1px 5px; font-size:11px; }
+
+    /* --- responsiveness --- */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { max-width: 100%; }
+    .card { min-width: 0; }   /* let grid cells shrink so children can scroll instead of overflowing the page */
+
+    /* Horizontal-scroll wrapper: wide tables scroll INSIDE the card instead of
+       clipping the page. Tables keep width:100% so they fit when there's room. */
+    .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-scroll::-webkit-scrollbar { height: 8px; }
+    .table-scroll::-webkit-scrollbar-thumb { background:#2a3a4d; border-radius: 8px; }
+    .table-scroll::-webkit-scrollbar-track { background: transparent; }
+
+    /* Mobile: stack cards, wrap header/badges, shrink fonts slightly. */
+    @media (max-width: 640px) {
+      body { margin: 10px; }
+      .grid { grid-template-columns: 1fr; gap: 10px; }
+      h1 { font-size: 17px; }
+      .header { flex-wrap: wrap; gap: 8px; }
+      .wrap-pills { width: 100%; }
+      table { font-size: 12px; }
+      th, td { padding: 5px 6px; }
+      .pill, .tag-pass, .tag-fail { font-size: 11px; }
+    }
   </style>
 </head>
 <body>
@@ -45,31 +69,39 @@
   <div class="grid">
     <div id="card-positions" class="card">
       <div class="header"><div>Open Positions</div></div>
+      <div class="table-scroll">
       <table id="tbl-pos">
         <thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Avg</th><th>Last</th><th>Unrealized</th></tr></thead>
         <tbody></tbody>
       </table>
+      </div>
     </div>
     <div id="card-signals" class="card">
       <div class="header"><div>Latest Signals</div></div>
+      <div class="table-scroll">
       <table id="tbl-sig">
         <thead><tr><th>Time</th><th>Symbol</th><th>p</th><th>rv</th><th>thr</th><th>eff_thr</th><th>pass</th><th>allow</th><th>kinds</th></tr></thead>
         <tbody></tbody>
       </table>
+      </div>
     </div>
     <div id="card-recent" class="card">
       <div class="header"><div>Recent Paper Trades</div></div>
+      <div class="table-scroll">
       <table id="tbl-recent">
         <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Price</th><th>Qty</th><th>Reason</th></tr></thead>
         <tbody></tbody>
       </table>
+      </div>
     </div>
     <div id="card-closed" class="card">
       <div class="header"><div>Closed Trades (PnL)</div></div>
+      <div class="table-scroll">
       <table id="tbl-closed">
         <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th><th>Exit</th><th>PnL</th><th>Reason</th></tr></thead>
         <tbody></tbody>
       </table>
+      </div>
     </div>
   </div>
 
@@ -80,6 +112,7 @@
         <div>Tier 2 Shadow Data <span class="muted" style="font-size:11px;">(informational only)</span></div>
         <div id="t2-status-pill" class="pill muted">not started</div>
       </div>
+      <div class="table-scroll">
       <table id="tbl-t2">
         <thead>
           <tr>
@@ -93,6 +126,7 @@
         </thead>
         <tbody></tbody>
       </table>
+      </div>
       <div style="margin-top:8px; font-size:12px; color:#93a4b8; display:flex; gap:16px; flex-wrap:wrap;">
         <span>Cycle: <span id="t2-cycle">—</span></span>
         <span>HB age: <span id="t2-hb-age">—</span></span>
